@@ -48,13 +48,13 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1 * time.Second)
 	defer cancel()
 	// для проверки будем считать количество и сумму отправленных чисел
-	var inputSum atomic.Int64   // сумма сгенерированных чисел
-	var inputCount atomic.Int64 // количество сгенерированных чисел
+	var inputSum int64   // сумма сгенерированных чисел
+	var inputCount int64 // количество сгенерированных чисел
 
 	// генерируем числа, считая параллельно их количество и сумму
 	go Generator(ctx, chIn, func(i int64) {
-		inputSum.Add(i)
-		inputCount.Add(1)
+		inputSum += i
+		inputCount++
 	})
 
 	const NumOut = 5 // количество обрабатывающих горутин и каналов
@@ -101,21 +101,21 @@ func main() {
 		count++
 	}
 
-	fmt.Println("Количество чисел", inputCount.Load(), count)
-	fmt.Println("Сумма чисел", inputSum.Load(), sum)
+	fmt.Println("Количество чисел", inputCount, count)
+	fmt.Println("Сумма чисел", inputSum, sum)
 	fmt.Println("Разбивка по каналам", amounts)
 
 	// проверка результатов
-	if inputSum.Load() != sum {
-		log.Fatalf("Ошибка: суммы чисел не равны: %d != %d\n", inputSum.Load(), sum)
+	if inputSum != sum {
+		log.Fatalf("Ошибка: суммы чисел не равны: %d != %d\n", inputSum, sum)
 	}
-	if inputCount.Load() != count {
-		log.Fatalf("Ошибка: количество чисел не равно: %d != %d\n", inputCount.Load(), count)
+	if inputCount != count {
+		log.Fatalf("Ошибка: количество чисел не равно: %d != %d\n", inputCount, count)
 	}
 	for _, v := range amounts {
-		inputCount.Add(-v) 
+		inputCount -=v 
 	}
-	if inputCount.Load() != 0 {
+	if inputCount != 0 {
 		log.Fatalf("Ошибка: разделение чисел по каналам неверное\n")
 	}
 }
